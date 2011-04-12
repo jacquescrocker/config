@@ -3,53 +3,53 @@ require 'spec_helper'
 describe Config do
 
   it "should load a basic config file" do
-    config = Config.sources(setting_path("settings.yml"))
+    config = Config::Options.from_files(setting_path("settings.yml"))
     config.size.should == 1
     config.server.should == "google.com"
   end
 
   it "should load 2 basic config files" do
-    config = Config.sources(setting_path("settings.yml"), setting_path("settings2.yml"))
+    config = Config::Options.from_files(setting_path("settings.yml"), setting_path("settings2.yml"))
     config.size.should == 1
     config.server.should == "google.com"
     config.another.should == "something"
   end
 
   it "should load empty config for a missing file path" do
-    config = Config.sources(setting_path("some_file_that_doesnt_exist.yml"))
+    config = Config::Options.from_files(setting_path("some_file_that_doesnt_exist.yml"))
     config.should be_empty
   end
 
   it "should load an empty config for multiple missing file paths" do
     files = [setting_path("doesnt_exist1.yml"), setting_path("doesnt_exist2.yml")]
-    config = Config.sources(files)
+    config = Config::Options.from_files(files)
     config.should be_empty
   end
 
   it "should load empty config for an empty setting file" do
-    config = Config.sources(setting_path("empty1.yml"))
+    config = Config::Options.from_files(setting_path("empty1.yml"))
     config.should be_empty
   end
 
   it "should convert to a hash" do
-    config = Config.sources(setting_path("development.yml")).to_hash
+    config = Config::Options.from_files(setting_path("development.yml")).to_hash
     config[:section][:servers].should be_a_kind_of(Array)
   end
 
   it "should convert to a json" do
-    config = Config.sources(setting_path("development.yml")).to_json
+    config = Config::Options.from_files(setting_path("development.yml")).to_json
     JSON.parse(config)["section"]["servers"].should be_a_kind_of(Array)
   end
 
   it "should load an empty config for multiple missing file paths" do
     files = [setting_path("empty1.yml"), setting_path("empty2.yml")]
-    config = Config.sources(files)
+    config = Config::Options.from_files(files)
     config.should be_empty
   end
 
   it "should allow overrides" do
     files = [setting_path("settings.yml"), setting_path("development.yml")]
-    config = Config.sources(files)
+    config = Config::Options.from_files(files)
     config.server.should == "google.com"
     config.size.should == 2
   end
@@ -61,14 +61,14 @@ describe Config do
     Settings.size.should == 1
 
     files = [setting_path("settings.yml"), setting_path("development.yml")]
-    Settings.reload_from_files(files)
+    Config.sources(files)
     Settings.server.should == "google.com"
     Settings.size.should == 2
   end
 
   context "Nested Settings" do
     let(:config) do
-      Config.sources(setting_path("development.yml"))
+      Config::Options.from_files(setting_path("development.yml"))
     end
 
     it "should allow nested sections" do
@@ -83,7 +83,7 @@ describe Config do
 
   context "Settings with ERB tags" do
     let(:config) do
-      Config.sources(setting_path("with_erb.yml"))
+      Config::Options.from_files(setting_path("with_erb.yml"))
     end
 
     it "should evaluate ERB tags" do
@@ -99,7 +99,7 @@ describe Config do
   context "Deep Merging" do
     let(:config) do
       files = [setting_path("deep_merge/config1.yml"), setting_path("deep_merge/config2.yml")]
-      Config.sources(files)
+      Config::Options.from_files(files)
     end
 
     it "should merge hashes from multiple configs" do
@@ -116,7 +116,7 @@ describe Config do
   context "Boolean Overrides" do
     let(:config) do
       files = [setting_path("bool_override/config1.yml"), setting_path("bool_override/config2.yml")]
-      Config.sources(files)
+      Config::Options.from_files(files)
     end
 
     it "should allow overriding of bool settings" do
@@ -139,7 +139,7 @@ describe Config do
   context "Settings with a type value of 'hash'" do
     let(:config) do
       files = [setting_path("custom_types/hash.yml")]
-      Config.sources(files)
+      Config::Options.from_files(files)
     end
 
     it "should turn that setting into a Real Hash" do

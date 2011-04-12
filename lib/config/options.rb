@@ -2,6 +2,18 @@ require 'ostruct'
 module Config
   class Options < OpenStruct
 
+    def self.from_files(*files)
+      config = new
+
+      # add yaml sources
+      [files].flatten.compact.uniq.each do |file|
+        config.add_source!(file.to_s)
+      end
+
+      config.reload!
+      config
+    end
+
     def empty?
       marshal_dump.empty?
     end
@@ -17,7 +29,7 @@ module Config
     # look through all our sources and rebuild the configuration
     def reload!
       conf = {}
-      @config_sources.each do |source|
+      @config_sources.to_a.each do |source|
         source_conf = source.load
 
         if conf.empty?
@@ -35,15 +47,10 @@ module Config
 
     alias :load! :reload!
 
-    def reload_from_files(*files)
-      RailsConfig.load_and_set_settings(files)
-      reload!
-    end
-
     def to_hash
       result = {}
       marshal_dump.each do |k, v|
-        result[k] = v.instance_of?(RailsConfig::Options) ? v.to_hash : v
+        result[k] = v.instance_of?(::Config::Options) ? v.to_hash : v
       end
       result
     end
